@@ -1,4 +1,4 @@
-name: Test the Lab 1 of Reuse
+name: Test the Lab 1 of Reuse with pr
 on: 
   pull_request:
   workflow_dispatch:
