@@ -1,0 +1,17 @@
+name: 'Cow Say Action'
+description: 'A simple action that displays a message with a cow'
+inputs:
+  say:
+    description: 'Message to be displayed by the cow'
+    required: true
+    default: 'moooow'
+  eyes:
+    description: 'Eye style of the cow'
+    required: false
+    default: 'O-O'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.say }}
+    - ${{ inputs.eyes }}
