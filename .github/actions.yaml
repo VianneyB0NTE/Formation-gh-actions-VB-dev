@@ -6,14 +6,13 @@ inputs:
     required: true
 outputs:
   text:
-    description: "Uppercase text"
+    description: Uppercase text
     value: ${{ steps.upper_step.outputs.upper_text }}
 runs:
   using: 'composite'
   steps:
     - id: upper_step
       run: |
-        echo "${INPUT_TEXT^^}"
         echo "upper_text=${INPUT_TEXT^^}" >> $GITHUB_OUTPUT
       env:
         INPUT_TEXT: ${{ inputs.text }}
