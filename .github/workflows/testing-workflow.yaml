@@ -10,6 +10,13 @@ jobs:
       - name: Setup Bats testing framework
         uses: bats-core/bats-action@2.0.0
         
+      - name: Install bats helpers
+        run: |
+          mkdir -p ./.github/tests/test_helper
+          git clone https://github.com/bats-core/bats-support ./.github/tests/test_helper/bats-support
+          git clone https://github.com/bats-core/bats-assert ./.github/tests/test_helper/bats-assert
+        shell: bash
+        
       - name: bats test
         run: |
           echo "run test..."
