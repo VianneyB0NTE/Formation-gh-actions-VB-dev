@@ -1,5 +1,7 @@
 name: Test the Lab 1 of Reuse
-on: pull_request
+on: 
+  pull_request:
+  workflow_dispatch:
 jobs:
   check-section1:
     runs-on: ubuntu-latest
