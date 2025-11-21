@@ -29,3 +29,16 @@ jobs:
           RESULT="${{ steps.simple-run.outputs.addition }}"
           echo "Testing if addition result '$RESULT' equals 9"
           [[ "$RESULT" -eq 9 ]]
+
+          
+      - name: Test failed addition
+        id: failed-addition
+        uses: ./.
+        with:
+          addition-input-1: ab
+          addition-input-2: cd
+        continue-on-error: true
+      - name: Validate // Test failed addition
+        run: |
+          [[ "${{ steps.failed-addition.outcome }}" == "failure" ]]
+          [[ "${{ steps.failed-addition.conclusion }}" == "success" ]]
