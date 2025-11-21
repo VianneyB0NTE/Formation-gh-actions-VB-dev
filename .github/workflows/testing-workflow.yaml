@@ -30,10 +30,10 @@ jobs:
           echo "Testing if addition result '$RESULT' equals 9"
           [[ "$RESULT" -eq 9 ]]
 
-          
+
       - name: Test failed addition
         id: failed-addition
-        uses: ./.
+        uses: ./.github/action/
         with:
           addition-input-1: ab
           addition-input-2: cd
