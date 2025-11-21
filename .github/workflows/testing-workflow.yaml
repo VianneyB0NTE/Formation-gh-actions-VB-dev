@@ -31,14 +31,21 @@ jobs:
           [[ "$RESULT" -eq 9 ]]
 
 
-      - name: Test failed addition
-        id: failed-addition
-        uses: ./.github/action/
-        with:
-          addition-input-1: ab
-          addition-input-2: cd
-        continue-on-error: true
-      - name: Validate // Test failed addition
+      # - name: Test failed addition
+      #   id: failed-addition
+      #   uses: ./.github/action/
+      #   with:
+      #     addition-input-1: ab
+      #     addition-input-2: cd
+      #   continue-on-error: true
+      # - name: Validate // Test failed addition
+      #   run: |
+      #     echo "Outcome: ${{ steps.failed-addition.outcome }}"
+      #     echo "Conclusion: ${{ steps.failed-addition.conclusion }}"
+
+      - name: test helloWorld
+        id: test-hello-world
         run: |
-          echo "Outcome: ${{ steps.failed-addition.outcome }}"
-          echo "Conclusion: ${{ steps.failed-addition.conclusion }}"
+          OUTPUT="${{ steps.simple-run.outputs.helloWorld }}"
+          echo "Testing if helloWorld output '$OUTPUT' equals 'Hello, World!'"
+          [[ "$OUTPUT" == "Hello World!" ]]
