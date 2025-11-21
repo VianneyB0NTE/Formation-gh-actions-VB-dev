@@ -11,6 +11,6 @@ jobs:
         with:
           text: GitHub Action Rocks
 
-      # Check the Job summary to see the notice message
+      # Display the uppercase text
       - run: |
-          echo "::notice ::${{ steps.upper_action.outputs.upper_text }}"
+          echo "Uppercase result: ${{ steps.upper_action.outputs.upper_text }}"
