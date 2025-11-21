@@ -31,31 +31,20 @@ runs:
 
   steps:
 
-    - name: Test addition
-      id: addition
-      uses: ./.
-      with:
-        addition-input-1: 4
-        addition-input-2: 5
-    - name: Validate // Test addition
-      run: |
-        [[ "${{ steps.addition.outputs.addition }}" -eq 9 ]]
-
-        
     - name: run addition
       id: addition
       env:
         ADD1: ${{ inputs.addition-input-1 }}
         ADD2: ${{ inputs.addition-input-2 }}
       run: |
-        OUTPUT_VALUE=$(sh scripts/addition.sh $ADD1 $ADD2)
+        OUTPUT_VALUE=$(sh ./.github/scripts/addition.sh $ADD1 $ADD2)
         echo "outputAdditionValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: run hello-world
       id: hello-world
       run: |
-        OUTPUT_VALUE=$(sh scripts/hello-world.sh)
+        OUTPUT_VALUE=$(sh ./.github/scripts/hello-world.sh)
         echo "outputHelloWorldValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
       shell: bash
 
@@ -64,6 +53,6 @@ runs:
       env:
         PAL: ${{ inputs.palindrome-input }}
       run: |
-        OUTPUT_VALUE=$(sh scripts/palindrome.sh $PAL)
+        OUTPUT_VALUE=$(sh ./.github/scripts/palindrome.sh $PAL)
         echo "outputPalindromeValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
       shell: bash

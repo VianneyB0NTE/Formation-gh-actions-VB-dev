@@ -5,9 +5,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      
+      - name: Test addition
+        id: addition
+        uses: ./.
+        with:
+          addition-input-1: 4
+          addition-input-2: 5
+      - name: testing addition
+        run: |
+          [[ "${{ steps.addition.outputs.addition }}" -eq 9 ]]
 
       - id: simple-run
-        uses: ./.
+        uses: ./.github/action/
         with:
           addition-input-1: 4
           addition-input-2: 5
