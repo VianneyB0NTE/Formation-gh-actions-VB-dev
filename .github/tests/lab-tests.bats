@@ -7,5 +7,5 @@ setup() {
 }
 
 @test "this is a test" {
-
+1 = 1
 }
