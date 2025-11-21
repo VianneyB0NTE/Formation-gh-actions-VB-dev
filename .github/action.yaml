@@ -1,0 +1,69 @@
+name: "Testing:Lab2"
+description: "Action of Lab2 in Testing section"
+
+inputs:
+  addition-input-1:
+    description: value that will be use with addition script
+    required: true
+    default: "0"
+  addition-input-2:
+    description: value that will be use with addition script
+    required: true
+    default: "0"
+  palindrome-input:
+    description: value that will be use with palindrome script
+    required: false
+    default: "school"
+
+outputs:
+  addition:
+    description: output value for addition
+    value: "${{ steps.addition.outputs.outputAdditionValue }}"
+  helloWorld:
+    description: output value for hello-world
+    value: "${{ steps.hello-world.outputs.outputHelloWorldValue }}"
+  palindrome:
+    description: output value for palindrome
+    value: "${{ steps.palindrome.outputs.outputPalindromeValue }}"
+
+runs:
+  using: "composite"
+
+  steps:
+
+    - name: Test addition
+      id: addition
+      uses: ./.
+      with:
+        addition-input-1: 4
+        addition-input-2: 5
+    - name: Validate // Test addition
+      run: |
+        [[ "${{ steps.addition.outputs.addition }}" -eq 9 ]]
+
+        
+    - name: run addition
+      id: addition
+      env:
+        ADD1: ${{ inputs.addition-input-1 }}
+        ADD2: ${{ inputs.addition-input-2 }}
+      run: |
+        OUTPUT_VALUE=$(sh scripts/addition.sh $ADD1 $ADD2)
+        echo "outputAdditionValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: run hello-world
+      id: hello-world
+      run: |
+        OUTPUT_VALUE=$(sh scripts/hello-world.sh)
+        echo "outputHelloWorldValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: run palindrome
+      id: palindrome
+      env:
+        PAL: ${{ inputs.palindrome-input }}
+      run: |
+        OUTPUT_VALUE=$(sh scripts/palindrome.sh $PAL)
+        echo "outputPalindromeValue=$OUTPUT_VALUE" >> $GITHUB_OUTPUT
+      shell: bash

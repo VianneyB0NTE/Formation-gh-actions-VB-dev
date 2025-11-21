@@ -1,29 +1,19 @@
-name: Test the Lab 1 of Testing
+name: Test the Lab 2 of Testing
 on: push
 jobs:
-  test-testing-lab1:
+  test-testing-lab2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - id: simple-run
+        uses: ./.
         with:
-          submodules: 'true'
-      - name: Setup Bats testing framework
-        uses: bats-core/bats-action@2.0.0
-        
-      - name: Install bats helpers
-        run: |
-          mkdir -p ./.github/tests/test_helper
-          git clone https://github.com/bats-core/bats-support ./.github/tests/test_helper/bats-support
-          git clone https://github.com/bats-core/bats-assert ./.github/tests/test_helper/bats-assert
-        shell: bash
-        
-      - name: Make scripts executable
-        run: |
-          chmod +x ./.github/scripts/*.sh
-        shell: bash
-        
-      - name: bats test
-        run: |
-          echo "run test..."
-          bats ./.github/tests/lab-tests.bats
-        shell: bash
+          addition-input-1: 4
+          addition-input-2: 5
+          palindrome-input: "Engage le jeu que je le gagne"
+
+      - run: |
+          echo "addition: ${{ steps.simple-run.outputs.addition }}"
+          echo "helloWorld: ${{ steps.simple-run.outputs.helloWorld }}"
+          echo "palindrome: ${{ steps.simple-run.outputs.palindrome }}"
