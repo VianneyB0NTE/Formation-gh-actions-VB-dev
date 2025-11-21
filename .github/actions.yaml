@@ -16,4 +16,5 @@ runs:
         echo "${INPUT_TEXT^^}"
       env:
         INPUT_TEXT: ${{ inputs.text }}
+        OUTPUT_TEXT: ${{ steps.upper_step.outputs.upper_text }}
       shell: bash
