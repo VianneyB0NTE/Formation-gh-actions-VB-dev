@@ -5,16 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      
-      - name: Test addition
-        id: addition
-        uses: ./.
-        with:
-          addition-input-1: 4
-          addition-input-2: 5
-      - name: testing addition
+
+      - name: Make scripts executable
         run: |
-          [[ "${{ steps.addition.outputs.addition }}" -eq 9 ]]
+          chmod +x ./.github/scripts/*.sh
+        shell: bash
 
       - id: simple-run
         uses: ./.github/action/
@@ -23,7 +18,14 @@ jobs:
           addition-input-2: 5
           palindrome-input: "Engage le jeu que je le gagne"
 
-      - run: |
+      - name: Display outputs
+        run: |
           echo "addition: ${{ steps.simple-run.outputs.addition }}"
           echo "helloWorld: ${{ steps.simple-run.outputs.helloWorld }}"
           echo "palindrome: ${{ steps.simple-run.outputs.palindrome }}"
+
+      - name: Test addition result
+        run: |
+          RESULT="${{ steps.simple-run.outputs.addition }}"
+          echo "Testing if addition result '$RESULT' equals 9"
+          [[ "$RESULT" -eq 9 ]]
