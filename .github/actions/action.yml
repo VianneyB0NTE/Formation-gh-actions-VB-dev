@@ -5,7 +5,7 @@ inputs:
     description: text
     required: true
 outputs:
-  text:
+  upper_text:
     description: Uppercase text
     value: ${{ steps.upper_step.outputs.upper_text }}
 runs:
