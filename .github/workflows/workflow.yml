@@ -200,13 +200,14 @@ jobs:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
         id: fc
+        continue-on-error: true
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
           body-includes: ${{ env.DIRECTORY }}
 
       - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
+        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
         uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -215,7 +216,7 @@ jobs:
             ${{ steps.format-result.outputs.result }}
 
       - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
+        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
         uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
@@ -273,13 +274,14 @@ jobs:
       - name: Find Comment
         uses: peter-evans/find-comment@v3
         id: fc
+        continue-on-error: true
         with:
           issue-number: ${{ github.event.pull_request.number }}
           comment-author: "github-actions[bot]"
           body-includes: ${{ env.DIRECTORY }}
 
       - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
+        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
         uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -288,7 +290,7 @@ jobs:
             ${{ steps.format-result.outputs.result }}
 
       - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
+        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
         uses: peter-evans/create-or-update-comment@v5
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
