@@ -14,7 +14,7 @@ runs:
     - id: upper_step
       run: |
         echo "${INPUT_TEXT^^}"
+        echo "upper_text=${INPUT_TEXT^^}" >> $GITHUB_OUTPUT
       env:
         INPUT_TEXT: ${{ inputs.text }}
-        OUTPUT_TEXT: ${{ steps.upper_step.outputs.upper_text }}
       shell: bash
