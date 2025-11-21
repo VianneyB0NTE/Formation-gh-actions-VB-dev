@@ -16,7 +16,7 @@ jobs:
         with:
           addition-input-1: 4
           addition-input-2: 5
-          palindrome-input: "Engage le jeu que je le gagne"
+          palindrome-input: "Engage le jeu que je le gagne frerot"
 
       - name: Display outputs
         run: |
