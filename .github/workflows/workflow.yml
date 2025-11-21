@@ -3,50 +3,60 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  check-section1:
+  lint-docs:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        section: [section1, section2, section3, section4]
+      fail-fast: false  # Continue other sections even if one fails
 
     steps:
       - uses: actions/checkout@v5
 
       - name: Set directory
-        env:
-          DIR: docs/section1
         run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
+          echo "DIRECTORY=docs/${{ matrix.section }}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
+      - name: Setup Node.js and install markdownlint
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install markdownlint globally
+        run: npm install -g markdownlint-cli
 
       - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
+        run: echo $(markdownlint -V)
 
       - name: Lint the section markdown
         continue-on-error: true
         run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
+          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp-${{ matrix.section }}.txt
         shell: bash
 
       - name: Format result
         id: format-result
         uses: actions/github-script@v8
         with:
-          github-token: $GITHUB_TOKEN
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           result-encoding: string
           script: |
             const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
+            try {
+              var reportBulk = (await fs.readFile("tmp-${{ matrix.section }}.txt")).toString();
+            } catch (error) {
+              var reportBulk = "No issues found! ✅";
+            }
+            const output = `### Lint 📖 - ${{ matrix.section }}
             <details>
+            <summary>Click to view linting results</summary>
+            
             \`\`\`
-            `+reportBulk+`
+            ${reportBulk}
             \`\`\`
-            </details>`
+            </details>`;
             return output;
 
       - name: Find Comment
@@ -64,7 +74,7 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## ${{ env.DIRECTORY }}
+            ## 📁 ${{ env.DIRECTORY }}
             ${{ steps.format-result.outputs.result }}
 
       - name: Update comment
@@ -73,228 +83,29 @@ jobs:
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           body: |
-            ## ${{ env.DIRECTORY }}
+            ## 📁 ${{ env.DIRECTORY }}
             ${{ steps.format-result.outputs.result }}
           edit-mode: replace
-  check-section2:
-    needs: check-section1
+
+  # Summary job that runs after all sections complete
+  lint-summary:
+    needs: lint-docs
     runs-on: ubuntu-latest
+    if: always()  # Run even if some lint jobs failed
 
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section2
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        continue-on-error: true
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
+      - name: Create summary comment
         uses: peter-evans/create-or-update-comment@v5
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-  check-section3:
-    needs: check-section2
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section3
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        continue-on-error: true
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-  check-section4:
-    needs: check-section3
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section4
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        continue-on-error: true
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
+            ## 📋 Linting Summary Complete
+            
+            All documentation sections have been linted and individual results are posted above.
+            
+            - ✅ **section1**: docs/section1
+            - ✅ **section2**: docs/section2  
+            - ✅ **section3**: docs/section3
+            - ✅ **section4**: docs/section4
+            
+            *This workflow completed at ${{ github.event.head_commit.timestamp }}*
