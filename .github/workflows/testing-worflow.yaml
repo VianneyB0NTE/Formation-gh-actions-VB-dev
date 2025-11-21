@@ -2,20 +2,30 @@ name: Test the Lab 1 of Code
 on: push
 jobs:
   test-syntax-lab1:
+    inputs:
+      say:
+        description: 'Message to be displayed by the cow'
+        required: true
+        default: 'moooow'
+      eyes:
+        description: 'Eye style of the cow'
+        required: false
+        default: 'O-O'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - name: default run
-        uses: ./.
+      # - name: default run
+      #   uses: ./.
 
       - name: custom run with mandatory input
         uses: ./.
         with:
-          say: GitHub Action Rocks
+          say: ${{ inputs.say }}
 
       - name: custom run with all inputs
         uses: ./.
         with:
-          say: GitHub Action Rocks
-          eyes: o-
+          say: ${{ inputs.say }}
+          eyes: ${{ inputs.eyes }}
+      
