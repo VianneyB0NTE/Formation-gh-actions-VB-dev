@@ -7,10 +7,9 @@ jobs:
       - uses: actions/checkout@v5
 
       - id: upper_action
-        uses: ./.
+        uses: ./.github/actions/
         with:
           text: GitHub Action Rocks
 
-      # Display the uppercase text
       - run: |
           echo "Uppercase result: ${{ steps.upper_action.outputs.upper_text }}"
