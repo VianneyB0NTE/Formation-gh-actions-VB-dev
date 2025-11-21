@@ -1,33 +1,16 @@
-name: Test the Lab 1 of Code changed
-on: 
-  push:
-  workflow_dispatch:
-    inputs:
-      say:
-        description: 'Message to be displayed by the cow'
-        required: true
-        default: 'moooow'
-      eyes:
-        description: 'Eye style of the cow'
-        required: false
-        default: 'O-O'
+name: Test the Lab 2 of Code
+on: push
 jobs:
-  test-syntax-lab1:
+  test-syntax-lab2:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      # - name: default run
-      #   uses: ./.
-
-      - name: custom run with mandatory input
+      - id: upper_action
         uses: ./.
         with:
-          say: ${{ inputs.say }}
+          text: GitHub Action Rocks
 
-      - name: custom run with all inputs
-        uses: ./.
-        with:
-          say: ${{ inputs.say }}
-          eyes: ${{ inputs.eyes }}
-      
+      # Check the Job summary to see the notice message
+      - run: |
+          echo "::notice ::${{ steps.upper_action.outputs.upper_text }}"
