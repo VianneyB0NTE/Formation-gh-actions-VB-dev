@@ -1,19 +1,5 @@
-name: 'Syntax:Lab2'
-description: 'Action of Lab2 in Syntax section'
-inputs:
-  text:
-    description: text
-    required: true
-outputs:
-  text:
-    description: Uppercase text
-    value: ${{ steps.upper_step.outputs.upper_text }}
+name: "Interactions:Lab1"
+description: "Action of Lab1 in Interactions section"
 runs:
-  using: 'composite'
-  steps:
-    - id: upper_step
-      run: |
-        echo "upper_text=${INPUT_TEXT^^}" >> $GITHUB_OUTPUT
-      env:
-        INPUT_TEXT: ${{ inputs.text }}
-      shell: bash
+  using: "node20"
+  main: "dist/index.js"
