@@ -63,3 +63,11 @@ jobs:
           echo "palindrome.sh output: '$OUTPUT'"
           [[ "$OUTPUT" == *"is a palindrome"* ]]
           echo "✅ kayak is correctly identified as a palindrome"
+    
+      - name: Test foo is not a palindrome (direct shell test)
+        run: |
+          echo "Testing kayak palindrome directly with shell script..."
+          OUTPUT=$(./.github/scripts/palindrome.sh foo)
+          echo "palindrome.sh output: '$OUTPUT'"
+          [[ "$OUTPUT" != *"is a palindrome"* ]]
+          echo "✅ foo is correctly identified as not a palindrome"
