@@ -1,0 +1,157 @@
+name: 'Markdown Linter'
+description: 'Lint markdown files and create/update PR comments with results'
+author: 'VianneyB0NTE'
+
+inputs:
+  directory:
+    description: 'Directory to lint (e.g., docs/section1)'
+    required: true
+  config-file:
+    description: 'Path to markdownlint config file'
+    required: false
+    default: ''
+  severity:
+    description: 'Minimum severity level (error, warning, info)'
+    required: false
+    default: 'warning'
+  comment-title:
+    description: 'Title for the PR comment'
+    required: false
+    default: '📖 Markdown Linting Results'
+  fail-on-error:
+    description: 'Fail the action if linting errors are found'
+    required: false
+    default: 'false'
+  files-pattern:
+    description: 'File pattern to lint (e.g., *.md, **/*.md)'
+    required: false
+    default: '*.md'
+
+outputs:
+  results-file:
+    description: 'Path to the linting results file'
+    value: ${{ steps.lint.outputs.results-file }}
+  has-errors:
+    description: 'Whether linting errors were found'
+    value: ${{ steps.lint.outputs.has-errors }}
+  comment-id:
+    description: 'ID of the created/updated comment'
+    value: ${{ steps.comment.outputs.comment-id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Install markdownlint-cli
+      run: npm install -g markdownlint-cli
+      shell: bash
+
+    - name: Create results directory
+      run: mkdir -p .markdown-lint-results
+      shell: bash
+
+    - name: Run markdown linting
+      id: lint
+      run: |
+        RESULTS_FILE=".markdown-lint-results/results-${{ inputs.directory }}.txt"
+        RESULTS_FILE_SAFE="${RESULTS_FILE//\//-}"
+        
+        echo "results-file=$RESULTS_FILE_SAFE" >> $GITHUB_OUTPUT
+        
+        # Build markdownlint command
+        LINT_CMD="markdownlint ${{ inputs.directory }}/${{ inputs.files-pattern }}"
+        
+        # Add config file if provided
+        if [ -n "${{ inputs.config-file }}" ]; then
+          LINT_CMD="$LINT_CMD --config ${{ inputs.config-file }}"
+        fi
+        
+        # Run linting and capture results
+        echo "🔍 Linting markdown files in ${{ inputs.directory }}..."
+        if $LINT_CMD -o "$RESULTS_FILE_SAFE" 2>&1; then
+          echo "has-errors=false" >> $GITHUB_OUTPUT
+          echo "✅ No linting errors found"
+        else
+          echo "has-errors=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Linting errors found"
+        fi
+        
+        # Ensure results file exists
+        touch "$RESULTS_FILE_SAFE"
+      shell: bash
+
+    - name: Format results
+      id: format
+      uses: actions/github-script@v8
+      with:
+        github-token: ${{ github.token }}
+        result-encoding: string
+        script: |
+          const fs = require('fs').promises;
+          const path = require('path');
+          
+          const resultsFile = '${{ steps.lint.outputs.results-file }}';
+          let content = '';
+          
+          try {
+            content = await fs.readFile(resultsFile, 'utf8');
+          } catch (error) {
+            content = 'No issues found! ✅';
+          }
+          
+          const isEmpty = !content.trim();
+          const hasErrors = '${{ steps.lint.outputs.has-errors }}' === 'true';
+          
+          const statusIcon = hasErrors ? '❌' : '✅';
+          const statusText = hasErrors ? 'Issues Found' : 'No Issues';
+          
+          const output = `### ${{ inputs.comment-title }} ${statusIcon}
+          
+          **Directory:** \`${{ inputs.directory }}\`  
+          **Status:** ${statusText}  
+          **Files Pattern:** \`${{ inputs.files-pattern }}\`
+          
+          <details>
+          <summary>📋 Click to view detailed results</summary>
+          
+          \`\`\`
+          ${isEmpty ? 'No issues found! All markdown files are properly formatted.' : content}
+          \`\`\`
+          </details>
+          
+          ---
+          *Linted at ${new Date().toISOString()}*`;
+          
+          return output;
+
+    - name: Find existing comment
+      uses: peter-evans/find-comment@v3
+      id: find-comment
+      continue-on-error: true
+      with:
+        token: ${{ github.token }}
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: ${{ inputs.directory }}
+
+    - name: Create or update comment
+      id: comment
+      uses: peter-evans/create-or-update-comment@v5
+      with:
+        token: ${{ github.token }}
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-id: ${{ steps.find-comment.outputs.comment-id != '' && steps.find-comment.outcome != 'failure' && steps.find-comment.outputs.comment-id || '' }}
+        body: ${{ steps.format.outputs.result }}
+        edit-mode: replace
+
+    - name: Fail if errors found (optional)
+      if: inputs.fail-on-error == 'true' && steps.lint.outputs.has-errors == 'true'
+      run: |
+        echo "❌ Markdown linting failed with errors"
+        exit 1
+      shell: bash

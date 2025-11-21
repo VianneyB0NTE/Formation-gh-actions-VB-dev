@@ -1,296 +1,75 @@
-name: Test the Lab 1 of Reuse
+name: Documentation Linting with Reusable Action
 on: 
   pull_request:
+    paths: ['docs/**']
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
-  check-section1:
+  lint-documentation:
     runs-on: ubuntu-latest
-
+    strategy:
+      matrix:
+        section: [section1, section2, section3, section4]
+      fail-fast: false
+    
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set directory
-        env:
-          DIR: docs/section1
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
+      - name: Lint ${{ matrix.section }} documentation
+        id: lint
+        uses: ./.github/actions/markdown-linter
         with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
+          directory: 'docs/${{ matrix.section }}'
+          comment-title: '📖 Linting Results - ${{ matrix.section }}'
+          files-pattern: '**/*.md'
+          fail-on-error: 'false'
 
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
+      - name: Display results
+        run: |
+          echo "📊 Linting completed for docs/${{ matrix.section }}"
+          echo "Has errors: ${{ steps.lint.outputs.has-errors }}"
+          echo "Results file: ${{ steps.lint.outputs.results-file }}"
+          echo "Comment ID: ${{ steps.lint.outputs.comment-id }}"
 
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-  check-section2:
-    needs: check-section1
+  # Optional: Summary job that consolidates results
+  lint-summary:
+    needs: lint-documentation
     runs-on: ubuntu-latest
-
+    if: always()
+    
     steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section2
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
+      - name: Checkout for summary
+        uses: actions/checkout@v4
+        
+      - name: Create workflow summary
         uses: peter-evans/create-or-update-comment@v5
         with:
+          token: ${{ github.token }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-  check-section3:
-    needs: check-section2
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section3
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-  check-section4:
-    needs: check-section3
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Set directory
-        env:
-          DIR: docs/section4
-        run: |
-          echo "DIRECTORY=${DIR}" >> $GITHUB_ENV
-        shell: bash
-
-      - name: Linter installation
-        run: |
-          npm install -g markdownlint-cli
-        shell: bash
-
-      - name: Print markdownlint version
-        run: |
-          echo $(markdownlint -V)
-        shell: bash
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: $GITHUB_TOKEN
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            var reportBulk = (await fs.readFile("tmp.txt")).toString();
-            const output = `### Lint 📖
-            <details>
-            \`\`\`
-            `+reportBulk+`
-            \`\`\`
-            </details>`
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != ''
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
+            ## 🎯 Documentation Linting Summary
+            
+            Markdown linting has been completed for all documentation sections using our reusable action!
+            
+            ### Processed Sections:
+            - 📁 **section1** → `docs/section1`
+            - 📁 **section2** → `docs/section2`  
+            - 📁 **section3** → `docs/section3`
+            - 📁 **section4** → `docs/section4`
+            
+            ### Action Features Used:
+            - ✅ Parallel processing with matrix strategy
+            - ✅ Smart comment creation/updating
+            - ✅ Detailed linting results with expandable sections
+            - ✅ Comprehensive error handling
+            
+            Check the individual section results above for detailed linting information.
+            
+            ---
+            *Completed at ${{ github.event.head_commit.timestamp }}* | **Workflow:** `${{ github.workflow }}` | **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
