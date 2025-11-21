@@ -1,6 +1,7 @@
-name: Test the Lab 1 of Reuse with pr
+name: Documentation Linting with Reusable Action
 on: 
   pull_request:
+    paths: ['docs/**']
   workflow_dispatch:
 
 permissions:
@@ -9,113 +10,66 @@ permissions:
   issues: write
 
 jobs:
-  lint-docs:
+  lint-documentation:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         section: [section1, section2, section3, section4]
-      fail-fast: false  # Continue other sections even if one fails
-
+      fail-fast: false
+    
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set directory
+      - name: Lint ${{ matrix.section }} documentation
+        id: lint
+        uses: ./.github/actions/markdown-linter
+        with:
+          directory: 'docs/${{ matrix.section }}'
+          comment-title: '📖 Linting Results - ${{ matrix.section }}'
+          files-pattern: '**/*.md'
+          fail-on-error: 'false'
+
+      - name: Display results
         run: |
-          echo "DIRECTORY=docs/${{ matrix.section }}" >> $GITHUB_ENV
-        shell: bash
+          echo "📊 Linting completed for docs/${{ matrix.section }}"
+          echo "Has errors: ${{ steps.lint.outputs.has-errors }}"
+          echo "Results file: ${{ steps.lint.outputs.results-file }}"
+          echo "Comment ID: ${{ steps.lint.outputs.comment-id }}"
 
-      - name: Setup Node.js and install markdownlint
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install markdownlint globally
-        run: npm install -g markdownlint-cli
-
-      - name: Print markdownlint version
-        run: echo $(markdownlint -V)
-
-      - name: Lint the section markdown
-        continue-on-error: true
-        run: |
-          markdownlint ${{ env.DIRECTORY }}/*.md -o tmp-${{ matrix.section }}.txt
-        shell: bash
-
-      - name: Format result
-        id: format-result
-        uses: actions/github-script@v8
-        with:
-          github-token: ${{ github.token }}
-          result-encoding: string
-          script: |
-            const fs = require('fs').promises;
-            try {
-              var reportBulk = (await fs.readFile("tmp-${{ matrix.section }}.txt")).toString();
-            } catch (error) {
-              var reportBulk = "No issues found! ✅";
-            }
-            const output = `### Lint 📖 - ${{ matrix.section }}
-            <details>
-            <summary>Click to view linting results</summary>
-            
-            \`\`\`
-            ${reportBulk}
-            \`\`\`
-            </details>`;
-            return output;
-
-      - name: Find Comment
-        uses: peter-evans/find-comment@v3
-        id: fc
-        continue-on-error: true
-        with:
-          token: ${{ github.token }}
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: "github-actions[bot]"
-          body-includes: ${{ env.DIRECTORY }}
-
-      - name: Create comment
-        if: steps.fc.outputs.comment-id == '' || steps.fc.outcome == 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          token: ${{ github.token }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## 📁 ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-
-      - name: Update comment
-        if: steps.fc.outputs.comment-id != '' && steps.fc.outcome != 'failure'
-        uses: peter-evans/create-or-update-comment@v5
-        with:
-          token: ${{ github.token }}
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          body: |
-            ## 📁 ${{ env.DIRECTORY }}
-            ${{ steps.format-result.outputs.result }}
-          edit-mode: replace
-
-  # Summary job that runs after all sections complete
+  # Optional: Summary job that consolidates results
   lint-summary:
-    needs: lint-docs
+    needs: lint-documentation
     runs-on: ubuntu-latest
-    if: always()  # Run even if some lint jobs failed
-
+    if: always()
+    
     steps:
-      - name: Create summary comment
+      - name: Checkout for summary
+        uses: actions/checkout@v4
+        
+      - name: Create workflow summary
         uses: peter-evans/create-or-update-comment@v5
         with:
           token: ${{ github.token }}
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ## 📋 Linting Summary Complete
+            ## 🎯 Documentation Linting Summary
             
-            All documentation sections have been linted and individual results are posted above.
+            Markdown linting has been completed for all documentation sections using our reusable action!
             
-            - ✅ **section1**: docs/section1
-            - ✅ **section2**: docs/section2  
-            - ✅ **section3**: docs/section3
-            - ✅ **section4**: docs/section4
+            ### Processed Sections:
+            - 📁 **section1** → `docs/section1`
+            - 📁 **section2** → `docs/section2`  
+            - 📁 **section3** → `docs/section3`
+            - 📁 **section4** → `docs/section4`
             
-            *This workflow completed at ${{ github.event.head_commit.timestamp }}*
+            ### Action Features Used:
+            - ✅ Parallel processing with matrix strategy
+            - ✅ Smart comment creation/updating
+            - ✅ Detailed linting results with expandable sections
+            - ✅ Comprehensive error handling
+            
+            Check the individual section results above for detailed linting information.
+            
+            ---
+            *Completed at ${{ github.event.head_commit.timestamp }}* | **Workflow:** `${{ github.workflow }}` | **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
