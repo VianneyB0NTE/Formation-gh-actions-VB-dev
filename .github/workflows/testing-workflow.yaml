@@ -49,3 +49,17 @@ jobs:
           OUTPUT="${{ steps.simple-run.outputs.helloWorld }}"
           echo "Testing if helloWorld output '$OUTPUT' equals 'Hello, World!'"
           [[ "$OUTPUT" == "Hello World!" ]]
+      - name: test palindrome
+        id: test-palindrome
+        run: |
+          OUTPUT="${{ steps.simple-run.outputs.palindrome }}"
+          echo "Testing if palindrome output '$OUTPUT' contains 'is a palindrome'"
+          [[ "$OUTPUT" == *"is a palindrome"* ]]
+
+      - name: Test kayak is a palindrome (direct shell test)
+        run: |
+          echo "Testing kayak palindrome directly with shell script..."
+          OUTPUT=$(./.github/scripts/palindrome.sh kayak)
+          echo "palindrome.sh output: '$OUTPUT'"
+          [[ "$OUTPUT" == *"is a palindrome"* ]]
+          echo "✅ kayak is correctly identified as a palindrome"
